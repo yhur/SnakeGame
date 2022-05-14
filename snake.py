@@ -69,7 +69,7 @@ class Snake:
             else:
                 self.body.pop()
 
-            self.__update_board()
+            self.update_board()
             return Snake.game_on, self.score
 
     def is_coliding(self, head):
@@ -81,7 +81,7 @@ class Snake:
             return True
         return False
 
-    def __update_board(self):
+    def update_board(self):
         WHITE = (255, 255, 255)
         RED =   (200,   0,   0)
         BLUE1 = (  0,   0, 255)
