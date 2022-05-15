@@ -1,20 +1,21 @@
 import pygame
 from snake import Snake
+from boards import GameBoard, DummyBoard
 import click
 
-def getDirection():
-    dir = [1,0,0]
+def getAction():
+    action = Snake.action_f
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            dir = stage_end
+            action = Snake.action_q
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                dir = [0,0,1]
+                action = Snake.action_l
             elif event.key == pygame.K_RIGHT:
-                dir = [0,1,0]
+                action = Snake.action_r
             elif event.key == pygame.K_ESCAPE:
-                dir = stage_end
-    return dir
+                action = Snake.action_q
+    return action
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('--speed', '-s', type=int, help='pygame speed')
@@ -27,20 +28,20 @@ def main(**kwargs):
     * Double Click on the close control of the App, or hit Escpe twice to end the App
     """
     speed = kwargs['speed'] or 5
-    bsize = kwargs['bsize'] or (32, 24)
-    snake = Snake(x=bsize[0], y=bsize[1])
-    stage_end = [0, 0, 0]       # [ forward, right, left ] one hot encoding
+    bsize = kwargs['bsize'] or (32, 20)
+    board = GameBoard(x=bsize[0], y=bsize[1])
+    snake = Snake(board)
     clock = pygame.time.Clock()
     game_close = True
     while game_close:
-        done = False
-        while done == False:
+        stageOn = True
+        while stageOn:
             clock.tick(speed)
-            dir = getDirection()
-            if dir is stage_end:
-                done = True
+            action = getAction()
+            if action is Snake.action_q:
+                stageOn = False
             else:
-                done, score = snake.moveTo(dir)
+                stageOn = snake.moveTo(action)
     
         hold = True
         while hold:
@@ -54,4 +55,5 @@ def main(**kwargs):
                     elif event.key == pygame.K_ESCAPE:
                         game_close = hold = False
     
-main()
+if __name__ == '__main__':
+    main()

@@ -1,10 +1,6 @@
-import pygame
 import random
 from enum import Enum
 from collections import namedtuple
-
-pygame.init()
-font = pygame.font.SysFont('arial', 25)
 
 Point = namedtuple('Point', 'x, y')
 
@@ -15,15 +11,15 @@ class Direction(Enum):          # clock wise sequenced enum, so keep the order
     UP    = (0, -1)
 
 class Snake:
+    action_r    = [0, 1, 0]
+    action_l    = [0, 0, 1]
+    action_f    = [1, 0, 0]
+    action_q    = [0, 0, 0]
 
-    game_over = True
-    game_on = False
-
-    def __init__(self, x=32, y=24, block_size = 20):             # number of blocks on the board
-        self.x, self.y, self.bs = x, y, block_size
+    def __init__(self, board):             # number of blocks on the board
         self.directionRing = list(Direction)
-        self.display = pygame.display.set_mode((x * self.bs, y * self.bs))
-        pygame.display.set_caption('Snake')
+        self.board = board
+        self.x, self.y = board.x, board.y
         self.reset()
 
     def reset(self):
@@ -38,41 +34,33 @@ class Snake:
         self.body = [self.head,
                       Point(self.head.x - bx, self.head.y - by),
                       Point(self.head.x - bx * 2, self.head.y - by * 2)]
-        self.__newApple()
+        self.newApple()
 
-    def __newApple(self):
+    def newApple(self):
         x = random.randint(0, self.x - 1)
         y = random.randint(0, self.y - 1)
         self.apple = Point(x, y)
         if self.apple in self.body:
-            self.__newApple()
+            self.newApple()
 
     def moveTo(self, action):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-
         self.moves += 1
 
-        self.__newHead(action)
+        self.newHead(action)
         self.body.insert(0, self.head)
         
-        if self.is_coliding(self.head) or self.moves > 100*len(self.body):
-            return Snake.game_over, self.score
+        if self.is_colliding(self.head) or self.moves > 100*len(self.body):
+            return False                # moveTo failed
         else:
             if self.head == self.apple:
                 self.score += 1
-                self.__newApple()
+                self.newApple()
             else:
                 self.body.pop()
-
             self.update_board()
-            return Snake.game_on, self.score
+            return True                 # moveTo succeeded
 
-    def is_coliding(self, head):
+    def is_colliding(self, head) -> bool:    # return True if colliding else False
         # hits wall
         if head.x >= self.x or head.x < 0 or head.y >= self.y or head.y < 0:
             return True
@@ -81,33 +69,17 @@ class Snake:
             return True
         return False
 
-    def update_board(self):
-        WHITE = (255, 255, 255)
-        RED =   (200,   0,   0)
-        BLUE1 = (  0,   0, 255)
-        BLUE2 = (  0, 100, 255)
-        BLACK = (  0,   0,   0)
-
-        self.display.fill(BLACK)
-
-        for pt in self.body:
-            pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x * self.bs, pt.y * self.bs, self.bs, self.bs))
-            pygame.draw.rect(self.display, BLUE2, pygame.Rect(pt.x * self.bs +4, pt.y * self.bs +4, 12, 12))
-
-        pygame.draw.rect(self.display, RED, pygame.Rect(self.apple.x * self.bs , self.apple.y * self.bs , self.bs, self.bs))
-
-        text = font.render("Score: " + str(self.score), True, WHITE)
-        self.display.blit(text, [0, 0])
-        pygame.display.flip()
-
-    def __newHead(self, action):
+    def newHead(self, action) -> bool:    # return True if succeeded else False
         # action = [ forward, right, left ]
         idx = self.directionRing.index(self.direction)
-        if action == [0, 1, 0]:             # Right 
+        if action == self.action_r:             # Right 
             self.direction = self.directionRing[(idx + 1) % 4]
-        elif action == [0, 0, 1]:           # Left
+        elif action == self.action_l:           # Left
             self.direction = self.directionRing[(idx - 1) % 4]
 
         x = self.head.x + self.direction.value[0]
         y = self.head.y + self.direction.value[1]
         self.head = Point(x, y)
+
+    def update_board(self):
+        self.board.update_board(self)
