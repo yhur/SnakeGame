@@ -1,6 +1,6 @@
 import pygame
 from snake import Snake
-from boards import GameBoard, DummyBoard
+from boards import GameBoard
 import click
 
 def getAction():

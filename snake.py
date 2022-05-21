@@ -24,7 +24,6 @@ class Snake:
 
     def reset(self):
         self.score = 0
-        self.apple = None
         self.moves = 0          # count of moves
 
         self.direction = random.choice(list(Direction))
@@ -34,14 +33,7 @@ class Snake:
         self.body = [self.head,
                       Point(self.head.x - bx, self.head.y - by),
                       Point(self.head.x - bx * 2, self.head.y - by * 2)]
-        self.newApple()
-
-    def newApple(self):
-        x = random.randint(0, self.x - 1)
-        y = random.randint(0, self.y - 1)
-        self.apple = Point(x, y)
-        if self.apple in self.body:
-            self.newApple()
+        self.board.newApple(self)
 
     def moveTo(self, action):
         self.moves += 1
@@ -52,9 +44,9 @@ class Snake:
         if self.is_colliding(self.head) or self.moves > 100*len(self.body):
             return False                # moveTo failed
         else:
-            if self.head == self.apple:
+            if self.head == self.board.apple:
                 self.score += 1
-                self.newApple()
+                self.board.newApple(self)
             else:
                 self.body.pop()
             self.update_board()
