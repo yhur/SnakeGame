@@ -21,6 +21,3 @@ while game_close:
     else:
       stageOn = snake.moveTo(action)
 ```       
-                
-                
-                
