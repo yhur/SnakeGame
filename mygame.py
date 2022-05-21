@@ -29,14 +29,12 @@ def main(**kwargs):
     """
     speed = kwargs['speed'] or 5
     bsize = kwargs['bsize'] or (32, 20)
-    board = GameBoard(x=bsize[0], y=bsize[1])
+    board = GameBoard(x=bsize[0], y=bsize[1], block_size=35)
     snake = Snake(board)
-    clock = pygame.time.Clock()
     game_close = True
     while game_close:
         stageOn = True
         while stageOn:
-            clock.tick(speed)
             action = getAction()
             if action is Snake.action_q:
                 stageOn = False
