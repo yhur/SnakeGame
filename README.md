@@ -4,7 +4,7 @@ This is a Python implementation of the Snake Game with the pygame as a separate 
 
 ![스크린샷 2022-05-21 오후 11 03 39](https://user-images.githubusercontent.com/13171662/169655238-0ecf4049-344f-4fc8-893b-1779fed5f23d.png)
 
-So, this can be adopted easily for the Machine Learnig such as the Genetic Algorithm or the Reinforcement Learning. The following snippet is the sample code of how to use the  snake.py/board.py.
+That way, this can be used easily for the Machine Learnig such as the Genetic Algorithm or the Reinforcement Learning. The following snippet is the sample code of how to use the  snake.py/board.py.
 
 ```python
 board = GameBoard(x=32, y=20)
