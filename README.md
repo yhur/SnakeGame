@@ -7,17 +7,17 @@ This is a Python implementation of the Snake Game with the pygame as a separate 
 That way, this can be used easily for the Machine Learnig such as the Genetic Algorithm or the Reinforcement Learning. The following snippet is the sample code of how to use the  snake.py/board.py.
 
 ```python
-board = GameBoard(x=32, y=20)
+speed = kwargs['speed'] or 5
+bsize = kwargs['bsize'] or (32, 20) 
+board = GameBoard(x=bsize[0], y=bsize[1], block_size=35)
 snake = Snake(board)
-clock = pygame.time.Clock()
 game_close = True
 while game_close:
-  stageOn = True
-  while stageOn:
-    clock.tick(speed)
-    action = getAction()
-    if action is Snake.action_q:
-      stageOn = False
-    else:
-      stageOn = snake.moveTo(action)
+    stageOn = True
+    while stageOn:
+        action = getAction()
+        if action is Snake.action_q:
+            stageOn = False
+        else:
+            stageOn = snake.moveTo(action)
 ```       
