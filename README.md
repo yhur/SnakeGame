@@ -48,8 +48,4 @@ That way, this can be used easily for Machine Learning such as the Genetic Algor
                 episode_active = False
             else:
                 episode_active = True if snake.moveTo(action) == 'ok' else False
-            
-            text = board.font.render("Score: " + str(snake.score), True, (255,255,255))
-            board.display.blit(text, [0, 0])
-            pygame.display.flip()
 ```       
