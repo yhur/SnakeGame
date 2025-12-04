@@ -19,39 +19,42 @@ def getAction():
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('--speed', '-s', type=int, help='pygame speed')
-@click.option('--bsize', '-b', type=(int, int), help='board size')
+@click.option('--grid_x', '-x', type=int, help='number of grid cells in x-axis')
+@click.option('--grid_y', '-y', type=int, help='number of grid cells in y-axis')
 def main(**kwargs):
     """\n\t\t\tWecome to Snakegame\n
     * Use Left and Right Key to change the direction\n
-    * Click on the close control of the App, or hit Escpe to end the current stage\n
-    * Use 'R' key' to start new stage when it dies or the stage ended\n
+    * Click on the close control of the App, or hit Escpe to end the current episode\n
+    * Use 'R' key' to start new episode when it dies or the episode ended\n
     * Double Click on the close control of the App, or hit Escpe twice to end the App
     """
-    speed = kwargs['speed'] or 5
-    bsize = kwargs['bsize'] or (32, 20)
-    board = GameBoard(x=bsize[0], y=bsize[1], block_size=35)
+    speed = kwargs['speed'] or 8
+    x = kwargs['grid_x'] or 32
+    y = kwargs['grid_y'] or 24
+    board = GameBoard(x=x, y=y, block_size=35, speed=speed)
     snake = Snake(board)
-    game_close = True
-    while game_close:
-        stageOn = True
-        while stageOn:
+
+    running = True
+    while running:
+        episode_active = True
+        while episode_active:
             action = getAction()
             if action is Snake.action_q:
-                stageOn = False
+                episode_active = False
             else:
-                stageOn = snake.moveTo(action)
-    
+                episode_active = True if snake.moveTo(action) == 'ok' else False
+            
         hold = True
         while hold:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    game_close = hold = False
+                    running = hold = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
                         snake.reset()
                         hold = False
                     elif event.key == pygame.K_ESCAPE:
-                        game_close = hold = False
+                        running = hold = False
     
 if __name__ == '__main__':
     main()

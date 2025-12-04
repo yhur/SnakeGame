@@ -4,13 +4,14 @@ from collections import namedtuple
 
 Point = namedtuple('Point', 'x, y')
 
-class Direction(Enum):          # clock wise sequenced enum, so keep the order
+class Direction(Enum):          # clock wise sequenced enum, so keeping this order is critical
     RIGHT = (1, 0)
     DOWN  = (0, 1)
     LEFT  = (-1, 0)
     UP    = (0, -1)
 
 class Snake:
+    # one hot encoding of [ forward, right, left ]
     action_r    = [0, 1, 0]
     action_l    = [0, 0, 1]
     action_f    = [1, 0, 0]
@@ -19,7 +20,6 @@ class Snake:
     def __init__(self, board):             # number of blocks on the board
         self.directionRing = list(Direction)
         self.board = board
-        self.x, self.y = board.x, board.y
         self.reset()
 
     def reset(self):
@@ -27,7 +27,7 @@ class Snake:
         self.moves = 0          # count of moves
 
         self.direction = random.choice(list(Direction))
-        self.head = Point(self.x/2, self.y/2)
+        self.head = Point(self.board.x/2, self.board.y/2)
         #self.head = Point(random.randint(2, self.x - 2), random.randint(2, self.y - 2))
         bx, by = self.direction.value[0], self.direction.value[1]
         self.body = [self.head,
@@ -40,9 +40,14 @@ class Snake:
 
         self.newHead(action)
         self.body.insert(0, self.head)
+        head = self.head
         
-        if self.is_colliding(self.head) or self.moves > 100*len(self.body):
-            return False                # moveTo failed
+        if head.x >= self.board.x or head.x < 0 or head.y >= self.board.y or head.y < 0:
+            return 'wall'
+        elif head in self.body[1:]:
+            return 'body'
+        elif self.moves > 100 * len(self.body):
+            return 'starved'
         else:
             if self.head == self.board.apple:
                 self.score += 1
@@ -50,18 +55,18 @@ class Snake:
             else:
                 self.body.pop()
             self.update_board()
-            return True                 # moveTo succeeded
+            return 'ok'                 # moveTo succeeded
 
     def is_colliding(self, head) -> bool:    # return True if colliding else False
         # hits wall
-        if head.x >= self.x or head.x < 0 or head.y >= self.y or head.y < 0:
+        if head.x >= self.board.x or head.x < 0 or head.y >= self.board.y or head.y < 0:
             return True
         # hits itself
         if head in self.body[1:]:
             return True
         return False
 
-    def newHead(self, action) -> bool:    # return True if succeeded else False
+    def newHead(self, action):
         # action = [ forward, right, left ]
         idx = self.directionRing.index(self.direction)
         if action == self.action_r:             # Right 
