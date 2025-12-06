@@ -69,6 +69,7 @@ class Snake:
         else:
             if self.head == self.apple:
                 self.score += 1
+                self.apple = None  # Clear apple after eating
                 # Don't pop tail when eating apple (snake grows)
                 return 'apple'
             else:
