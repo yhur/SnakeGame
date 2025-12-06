@@ -62,8 +62,7 @@ class SnakeGameWindow(GameBoard):
                 self.start_episode()
         else:
             if event.key() == Qt.Key_R:
-                self.snake.reset()
-                self.generate_apple(self.snake)
+                self.reset()
                 self.start_episode()
                 
     def closeEvent(self, event):

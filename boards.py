@@ -24,6 +24,11 @@ class Board:
                 snake.set_apple(self.apple)
                 return
 
+    def reset(self):
+        if self.snake:
+            self.snake.reset()
+            self.generate_apple(self.snake)
+
 class GameBoard(Board, QWidget):
     def __init__(self, x=32, y=24, block_size=20, speed=8, background=(0, 0, 0)):
         Board.__init__(self, x, y)
