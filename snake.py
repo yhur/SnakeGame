@@ -64,12 +64,13 @@ class Snake:
             return 'wall'
         elif head in self.body[1:]:
             return 'body'
-        elif self.moves > 100 * len(self.body):
+        elif self.moves > 100 * len(self.body) + 200:
             return 'starved'
         else:
             if self.head == self.apple:
                 self.score += 1
                 self.apple = None  # Clear apple after eating
+                self.moves = 0  # Reset move counter after eating
                 # Don't pop tail when eating apple (snake grows)
                 return 'apple'
             else:
