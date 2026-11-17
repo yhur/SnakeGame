@@ -75,11 +75,14 @@ class SnakeGameWindow(GameBoard):
             
         super().paintEvent(event)  # Call parent to draw board, snake, apple
         
+        # Scale the score text with the cell size (25pt at the default 35px cell)
+        cell, ox, oy = self.board_geometry()
         painter = QPainter(self)
         painter.setPen(QColor(255, 255, 255))
-        font = QFont('Arial', 25)
+        font = QFont('Arial')
+        font.setPixelSize(max(8, int(cell * 0.9)))
         painter.setFont(font)
-        painter.drawText(10, 30, f"Score: {self.score}")
+        painter.drawText(int(ox + cell * 0.3), int(oy + cell * 0.3 + font.pixelSize()), f"Score: {self.score}")
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('--speed', '-s', type=int, help='game speed')
