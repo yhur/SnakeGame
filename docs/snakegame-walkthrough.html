@@ -1,0 +1,461 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SnakeGame Code Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column on a faint grid-paper ground (the game's own grid), wide figures break out to 920px. */
+:root {
+  --bg: #f6f7fa;
+  --paper: #ffffff;
+  --fg: #171a24;
+  --muted: #5a6072;
+  --rule: #dde0e8;
+  --grid: rgba(30, 50, 120, 0.05);
+  --accent: #1f4fe0;          /* snake blue, toned for text */
+  --accent-soft: #e7edff;
+  --apple: #c41a1a;
+  --apple-soft: #fdeaea;
+  --ok: #1d7a46;
+  --ok-soft: #e3f4ea;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --code-bg: #eef0f5;
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1118; --paper: #161a24; --fg: #e5e8f0; --muted: #9aa1b5; --rule: #2a3040;
+    --grid: rgba(120, 150, 255, 0.05);
+    --accent: #7d9bff; --accent-soft: #1c2546;
+    --apple: #ff6b6b; --apple-soft: #3a1c20;
+    --ok: #5fd08f; --ok-soft: #15301f;
+    --warn: #e8b453; --warn-soft: #33280f;
+    --code-bg: #1c2130;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1118; --paper: #161a24; --fg: #e5e8f0; --muted: #9aa1b5; --rule: #2a3040;
+  --grid: rgba(120, 150, 255, 0.05);
+  --accent: #7d9bff; --accent-soft: #1c2546;
+  --apple: #ff6b6b; --apple-soft: #3a1c20;
+  --ok: #5fd08f; --ok-soft: #15301f;
+  --warn: #e8b453; --warn-soft: #33280f;
+  --code-bg: #1c2130;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 48px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 2.9rem); letter-spacing: -0.02em; }
+h2 { font-size: 1.6rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--accent);
+}
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 62ch; }
+a { color: var(--accent); }
+code, pre, kbd { font-family: var(--font-mono); }
+:not(pre) > code {
+  font-size: 0.88em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px;
+}
+kbd {
+  font-size: 0.82em; border: 1px solid var(--rule); border-bottom-width: 2px;
+  padding: 0.05em 0.45em; border-radius: 4px; background: var(--paper);
+}
+.ref { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+
+pre.code {
+  margin: 0; background: var(--code-bg); border-radius: 8px; padding: 14px 16px;
+  font-size: 0.85rem; line-height: 1.55; overflow-x: auto;
+}
+.code .k { color: var(--accent); font-weight: 500; }
+.code .c { color: var(--muted); font-style: italic; }
+.code .s { color: var(--ok); }
+.code .n { color: var(--apple); }
+
+/* header */
+header.hero { display: flex; flex-direction: column; gap: 16px; }
+.facts {
+  display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--font-mono);
+  font-size: 0.85rem; color: var(--muted); padding-top: 6px;
+}
+.facts b { color: var(--fg); font-weight: 500; }
+
+/* file map */
+.files { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.file {
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+}
+.file .name { font-family: var(--font-mono); font-weight: 500; font-size: 1rem; }
+.file .loc { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.file p { font-size: 0.92rem; color: var(--muted); }
+.file ul { margin: 0; padding-left: 18px; font-size: 0.88rem; }
+.file li code { font-size: 0.85em; }
+
+/* layered diagram */
+.figure {
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 12px;
+  padding: 20px; overflow-x: auto;
+}
+.figure svg { display: block; min-width: 640px; width: 100%; height: auto; }
+.figure svg text { font-family: var(--font-mono); fill: var(--fg); }
+.figure svg .sub { fill: var(--muted); }
+.figure svg .box { fill: var(--paper); stroke: var(--rule); stroke-width: 1.5; }
+.figure svg .box-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.figure svg .box-r { fill: var(--apple-soft); stroke: var(--apple); stroke-width: 1.5; }
+.figure svg .edge { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+.figure svg .edge-a { stroke: var(--accent); stroke-width: 1.5; fill: none; }
+.figure svg .arrow { fill: var(--muted); }
+.figure svg .arrow-a { fill: var(--accent); }
+.caption { font-size: 0.88rem; color: var(--muted); max-width: 68ch; }
+
+/* two column blocks */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.split > * { min-width: 0; }
+
+/* direction ring */
+.ring { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ring div {
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 6px;
+  text-align: center; font-family: var(--font-mono); font-size: 0.8rem;
+}
+.ring .idx { color: var(--muted); font-size: 0.72rem; }
+.ring .arrowglyph { font-size: 1.4rem; color: var(--accent); line-height: 1.2; }
+
+/* tables */
+.tablewrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; }
+.pill {
+  display: inline-block; font-family: var(--font-mono); font-size: 0.8rem; padding: 0.1em 0.55em;
+  border-radius: 999px; white-space: nowrap;
+}
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.apple { background: var(--apple-soft); color: var(--apple); }
+.pill.dead { background: var(--warn-soft); color: var(--warn); }
+
+/* geometry */
+.geom { display: flex; flex-direction: column; gap: 10px; }
+.calc { font-family: var(--font-mono); font-size: 0.85rem; background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre; }
+
+/* notes */
+.notes { display: flex; flex-direction: column; gap: 12px; }
+.note {
+  display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 14px; background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px;
+}
+.note .tag { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 3px; }
+.note .tag.bug { color: var(--apple); }
+.note .tag.doc { color: var(--warn); }
+.note .tag.tidy { color: var(--muted); }
+.note h3 { font-size: 1rem; margin-bottom: 4px; }
+.note p { font-size: 0.93rem; }
+
+pre.mermaid { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; overflow-x: auto; margin: 0; }
+
+@media (max-width: 760px) {
+  .files { grid-template-columns: minmax(0, 1fr); }
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .note { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="page">
+
+<header class="hero">
+  <span class="eyebrow">SnakeGenetics / SnakeGame</span>
+  <h1>SnakeGame Code Walkthrough</h1>
+  <p class="lede">A PyQt5 Snake game split into a pure game model, a drawing board, and a keyboard-driven window. The model takes turns as one-hot vectors, so a learning agent can drive it the same way a human does.</p>
+  <div class="facts">
+    <span><b>3</b> Python files</span>
+    <span><b>292</b> lines</span>
+    <span>deps: <b>PyQt5</b>, <b>click</b></span>
+    <span>default grid: <b>32 × 24</b></span>
+    <span>default speed: <b>8</b> ticks/s</span>
+  </div>
+</header>
+
+<section>
+  <span class="eyebrow">Map</span>
+  <h2>Three files, three jobs</h2>
+  <div class="files">
+    <div class="file">
+      <span class="name">snake.py</span><span class="loc">78 lines · no Qt</span>
+      <p>The rules. Holds the snake's body, direction, score and move counter, and decides what each move did.</p>
+      <ul><li><code>Point</code>, <code>Direction</code></li><li><code>Snake.moveTo(action)</code></li></ul>
+    </div>
+    <div class="file">
+      <span class="name">boards.py</span><span class="loc">104 lines · Qt drawing</span>
+      <p>The playing field. Places apples, and paints the board, snake and apple into a resizable window.</p>
+      <ul><li><code>Board.generate_apple</code></li><li><code>GameBoard.paintEvent</code></li></ul>
+    </div>
+    <div class="file">
+      <span class="name">mygame.py</span><span class="loc">110 lines · entry point</span>
+      <p>The human player. Reads CLI options, runs the timer loop, maps keys to actions, draws the score.</p>
+      <ul><li><code>SnakeGameWindow.game_step</code></li><li><code>main()</code> (click CLI)</li></ul>
+    </div>
+  </div>
+
+  <div class="figure" role="img" aria-label="Class diagram: SnakeGameWindow extends GameBoard, which extends Board and QWidget; SnakeGameWindow owns a Snake.">
+    <svg viewBox="0 0 860 250">
+      <defs>
+        <marker id="tri" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="arrow" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="tri-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="arrow-a" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+      <!-- Board -->
+      <rect class="box" x="20" y="20" width="220" height="70" rx="8"/>
+      <text x="36" y="48" font-size="15">Board</text>
+      <text class="sub" x="36" y="70" font-size="12">x, y, apple · generate_apple()</text>
+      <!-- QWidget -->
+      <rect class="box" x="20" y="150" width="220" height="70" rx="8"/>
+      <text x="36" y="178" font-size="15">QWidget</text>
+      <text class="sub" x="36" y="200" font-size="12">PyQt5 window base</text>
+      <!-- GameBoard -->
+      <rect class="box" x="320" y="85" width="230" height="70" rx="8"/>
+      <text x="336" y="113" font-size="15">GameBoard</text>
+      <text class="sub" x="336" y="135" font-size="12">timer · paintEvent · render()</text>
+      <!-- SnakeGameWindow -->
+      <rect class="box-a" x="620" y="20" width="220" height="70" rx="8"/>
+      <text x="636" y="48" font-size="15">SnakeGameWindow</text>
+      <text class="sub" x="636" y="70" font-size="12">game_step · keyPressEvent</text>
+      <!-- Snake -->
+      <rect class="box-r" x="620" y="160" width="220" height="70" rx="8"/>
+      <text x="636" y="188" font-size="15">Snake</text>
+      <text class="sub" x="636" y="210" font-size="12">body, direction · moveTo()</text>
+      <!-- inheritance edges -->
+      <path class="edge" d="M320,108 C280,108 280,55 240,55" marker-end="url(#tri)"/>
+      <path class="edge" d="M320,132 C280,132 280,185 240,185" marker-end="url(#tri)"/>
+      <path class="edge" d="M620,55 C585,55 585,108 550,108" marker-end="url(#tri)"/>
+      <!-- has-a -->
+      <path class="edge-a" d="M730,90 L730,158" marker-end="url(#tri-a)" stroke-dasharray="5 4"/>
+      <text class="sub" x="740" y="130" font-size="12">self.snake</text>
+      <text class="sub" x="262" y="240" font-size="12">solid = inherits from · dashed = owns</text>
+    </svg>
+  </div>
+  <p class="caption"><code>Board</code> knows nothing about Qt, and <code>Snake</code> knows nothing about the board class. The README states the intent: keep the presentation layer separate so a reinforcement-learning loop can call <code>Snake.moveTo</code> directly.</p>
+</section>
+
+<section>
+  <span class="eyebrow">snake.py</span>
+  <h2>The game model</h2>
+  <div class="prose"><p>Everything that counts as a rule lives here. Coordinates are grid cells, not pixels. <code>Point</code> is a <code>namedtuple('Point', 'x, y')</code>, so two points compare equal when their coordinates match, and <code>head in self.body</code> works as a collision test.</p></div>
+
+  <div class="split">
+    <div class="geom">
+      <h3>Directions form a clockwise ring</h3>
+      <p class="hint">The comment at <span class="ref">snake.py:7</span> says the order is critical. <code>newHead</code> turns by moving one step along this list.</p>
+      <div class="ring">
+        <div><div class="idx">idx 0</div><div class="arrowglyph" aria-hidden="true">→</div>RIGHT<br>(1, 0)</div>
+        <div><div class="idx">idx 1</div><div class="arrowglyph" aria-hidden="true">↓</div>DOWN<br>(0, 1)</div>
+        <div><div class="idx">idx 2</div><div class="arrowglyph" aria-hidden="true">←</div>LEFT<br>(-1, 0)</div>
+        <div><div class="idx">idx 3</div><div class="arrowglyph" aria-hidden="true">↑</div>UP<br>(0, -1)</div>
+      </div>
+      <p class="hint">Screen y grows downward, so DOWN is <code>+1</code>. Turning right is <code>idx + 1</code>, turning left is <code>idx − 1</code>, both modulo 4.</p>
+    </div>
+    <div class="geom">
+      <h3>Actions are relative, one-hot</h3>
+      <p class="hint">The snake never receives "go up". It receives "keep going", "turn right" or "turn left", relative to where it faces. That is a 3-way choice, which suits a classifier's output layer.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Constant</th><th>Vector</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>action_f</code></td><td><code>[1, 0, 0]</code></td><td>keep direction</td></tr>
+            <tr><td><code>action_r</code></td><td><code>[0, 1, 0]</code></td><td>turn clockwise</td></tr>
+            <tr><td><code>action_l</code></td><td><code>[0, 0, 1]</code></td><td>turn counter-clockwise</td></tr>
+            <tr><td><code>action_q</code></td><td><code>[0, 0, 0]</code></td><td>unused; behaves like forward</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h3>Starting position: <code>reset()</code> <span class="ref">snake.py:26</span></h3>
+  <div class="prose"><p>A new episode picks a random direction, puts the head at the board's center, and lays two more segments behind it, opposite the direction of travel. The snake is always 3 cells long at the start, and it can never start by facing into its own body.</p></div>
+<pre class="code"><span class="k">self</span>.direction = random.choice(<span class="k">list</span>(Direction))
+<span class="k">self</span>.head = Point(<span class="k">self</span>.grid_width/<span class="n">2</span>, <span class="k">self</span>.grid_height/<span class="n">2</span>)
+bx, by = <span class="k">self</span>.direction.value
+<span class="k">self</span>.body = [<span class="k">self</span>.head,
+             Point(head.x - bx,   head.y - by),
+             Point(head.x - bx*<span class="n">2</span>, head.y - by*<span class="n">2</span>)]   <span class="c"># body[0] is always the head</span></pre>
+
+  <h3>One tick: <code>moveTo(action)</code> <span class="ref">snake.py:55</span></h3>
+  <div class="prose"><p>Each call advances the snake one cell and returns a status string. The new head is inserted at the front of <code>body</code> first. Only after the checks does the tail get popped, and only if no apple was eaten. Not popping the tail is how the snake grows.</p></div>
+
+<pre class="mermaid">
+flowchart LR
+  A["moves += 1"] --> B["newHead(action)<br/>turn, then step"]
+  B --> C["body.insert(0, head)"]
+  C --> D{"outside grid?"}
+  D -- yes --> W(["'wall'"])
+  D -- no --> E{"head in body[1:]?"}
+  E -- yes --> X(["'body'"])
+  E -- no --> F{"moves > 100·len(body) + 200?"}
+  F -- yes --> S(["'starved'"])
+  F -- no --> G{"head == apple?"}
+  G -- yes --> P["score += 1<br/>moves = 0<br/>keep tail"] --> AP(["'apple'"])
+  G -- no --> Q["body.pop()"] --> OK(["'ok'"])
+</pre>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Status</th><th>Meaning</th><th>Caller's response (<span class="ref">mygame.py:29</span>)</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill ok">ok</span></td><td>Moved one cell, length unchanged.</td><td>Redraw, keep running.</td></tr>
+        <tr><td><span class="pill apple">apple</span></td><td>Ate the apple. Grew by one, score +1, move counter reset to 0.</td><td>Place a new apple, redraw.</td></tr>
+        <tr><td><span class="pill dead">wall</span></td><td>Head left the grid.</td><td rowspan="3">Episode ends, timer stops. Press <kbd>R</kbd> for a new one.</td></tr>
+        <tr><td><span class="pill dead">body</span></td><td>Head landed on any other segment, including the tail cell that was about to move away.</td></tr>
+        <tr><td><span class="pill dead">starved</span></td><td>Too many moves since the last apple. The limit grows with length: 500 moves at length 3, 1,200 at length 10.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">The starvation limit is there for training. It stops an agent that has learned to circle forever from running an endless episode.</p>
+</section>
+
+<section>
+  <span class="eyebrow">boards.py</span>
+  <h2>The board and its drawing</h2>
+  <div class="prose"><p><code>Board</code> holds the grid size and the apple. <code>generate_apple</code> keeps picking random cells until it finds one the snake is not on, then tells the snake where the apple is through <code>snake.set_apple</code>. <code>GameBoard</code> inherits from both <code>Board</code> and <code>QWidget</code>, owns the <code>QTimer</code>, and paints.</p></div>
+
+  <div class="split">
+    <div class="geom">
+      <h3>Square cells in any window size</h3>
+      <p class="hint"><code>board_geometry()</code> <span class="ref">boards.py:59</span> runs on every paint. It picks the largest cell that fits both axes and centers the board, leaving dark grey bars on the spare sides.</p>
+<div class="calc">cell = min(width / x, height / y)
+ox   = (width  - cell·x) / 2
+oy   = (height - cell·y) / 2
+
+default 1120×840, grid 32×24:
+  cell = min(35, 35) = 35, ox = oy = 0
+
+dragged to 1400×840:
+  cell = min(43.75, 35) = 35
+  ox   = (1400 − 1120)/2 = 140 px bars</div>
+    </div>
+    <div class="geom">
+      <h3>What gets painted</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Color</th></tr></thead>
+          <tbody>
+            <tr><td>Letterbox bars</td><td><code>(40, 40, 40)</code></td></tr>
+            <tr><td>Board</td><td><code>(0, 0, 0)</code></td></tr>
+            <tr><td>Segment, outer square</td><td><code>(0, 0, 255)</code></td></tr>
+            <tr><td>Segment, inset square (1/5 cell margin)</td><td><code>(0, 100, 255)</code></td></tr>
+            <tr><td>Apple</td><td><code>(200, 0, 0)</code></td></tr>
+            <tr><td>Score text (in <code>mygame.py</code>)</td><td>white, 0.9 × cell px</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint"><code>render(score)</code> stores the score, calls <code>update()</code> to schedule a repaint, then <code>processEvents()</code> so it shows straight away.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">mygame.py</span>
+  <h2>The window, the loop, and the keys</h2>
+  <div class="prose"><p><code>SnakeGameWindow</code> builds a <code>Snake</code>, places the first apple, and connects the timer to <code>game_step</code>. The timer fires every <code>1000 // speed</code> ms, which is 125 ms at the default speed of 8.</p></div>
+<pre class="code"><span class="k">def</span> game_step(<span class="k">self</span>):
+    <span class="k">if</span> <span class="k">self</span>.episode_active:
+        status = <span class="k">self</span>.snake.moveTo(<span class="k">self</span>.current_action)
+        <span class="k">if</span> status == <span class="s">'apple'</span>:
+            <span class="k">self</span>.generate_apple(<span class="k">self</span>.snake)
+        <span class="k">self</span>.render(<span class="k">self</span>.snake.score)
+        <span class="k">self</span>.current_action = Snake.action_f      <span class="c"># a turn lasts one tick</span>
+        <span class="k">if</span> status <span class="k">not in</span> [<span class="s">'ok'</span>, <span class="s">'apple'</span>]:
+            <span class="k">self</span>.episode_active = <span class="k">False</span>
+            <span class="k">self</span>.timer.stop()</pre>
+  <div class="prose"><p>A key press only changes <code>current_action</code>. The turn happens on the next tick, and if you press <kbd>←</kbd> and then <kbd>→</kbd> within one tick, only the last one counts.</p></div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Key</th><th>While playing</th><th>After the snake dies</th></tr></thead>
+      <tbody>
+        <tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>Queue a left or right turn for the next tick.</td><td>Ignored.</td></tr>
+        <tr><td><kbd>Space</kbd></td><td>Pause if running. If paused, advance one tick.</td><td>Advances the dead snake one tick (see notes).</td></tr>
+        <tr><td><kbd>R</kbd></td><td>Restart the timer without resetting, which resumes after a pause.</td><td>Reset the snake and apple, start a new episode.</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td colspan="2">Close the window and quit.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Command line</h3>
+<pre class="code">python mygame.py                 <span class="c"># 32×24 grid, speed 8</span>
+python mygame.py -s <span class="n">12</span> -x <span class="n">20</span> -y <span class="n">16</span>  <span class="c"># faster, smaller board</span></pre>
+  <div class="prose"><p><code>click</code> parses <code>--speed/-s</code>, <code>--grid_x/-x</code> and <code>--grid_y/-y</code>. Missing values fall back to 8, 32 and 24. The window opens at 35 px per cell and can be resized freely.</p></div>
+</section>
+
+<section>
+  <span class="eyebrow">Notes</span>
+  <h2>Things to know before changing it</h2>
+  <div class="notes">
+    <div class="note">
+      <span class="tag bug">Bug</span>
+      <div><h3>Odd grid sizes make apples uneatable</h3>
+      <p><code>reset()</code> places the head at <code>grid_width/2</code>, which is a float. With <code>-x 33</code> the head starts at x = 16.5 and stays on half-cells. Apples are always whole numbers, so <code>head == apple</code> is never true, and the snake starves. Using <code>// 2</code> fixes it. <span class="ref">snake.py:31</span></p></div>
+    </div>
+    <div class="note">
+      <span class="tag bug">Behavior</span>
+      <div><h3>Following your own tail kills you</h3>
+      <p>The body check runs before the tail is popped, so moving into the cell the tail is about to leave returns <code>'body'</code>. Many Snake versions allow that move. This matters if you train an agent on this model and run it elsewhere. <span class="ref">snake.py:65</span></p></div>
+    </div>
+    <div class="note">
+      <span class="tag bug">Edge case</span>
+      <div><h3>A full board hangs apple placement</h3>
+      <p><code>generate_apple</code> loops until it finds a free cell. If the snake ever fills the whole grid, there is no free cell and the loop never ends. <span class="ref">boards.py:18</span></p></div>
+    </div>
+    <div class="note">
+      <span class="tag bug">Edge case</span>
+      <div><h3><kbd>Space</kbd> moves a dead snake</h3>
+      <p>When the timer is stopped, <kbd>Space</kbd> calls <code>moveTo</code> without checking <code>episode_active</code>, so after a crash it keeps stepping the snake past the wall. <span class="ref">mygame.py:51</span></p></div>
+    </div>
+    <div class="note">
+      <span class="tag doc">Docs</span>
+      <div><h3>README and help text describe Escape differently</h3>
+      <p>They say Escape ends the current episode and pressing it twice ends the app. In the code, one Escape closes the window. They also don't mention <kbd>Space</kbd>. The welcome text is spelled "Wecome".</p></div>
+    </div>
+    <div class="note">
+      <span class="tag tidy">Tidy-up</span>
+      <div><h3>Leftovers</h3>
+      <p><code>start_timer</code> and <code>stop_timer</code> are never called. <code>action_q</code> is unused. <code>mygame.py</code> imports <code>QTimer</code> without using it. <code>Board.reset</code> uses <code>self.snake</code>, which only the subclass sets. <code>Point</code> is defined in both <code>snake.py</code> and <code>boards.py</code>. The two namedtuples compare equal, so this works, but one shared definition would be cleaner.</p></div>
+    </div>
+  </div>
+</section>
+
+</div>
